@@ -34,11 +34,11 @@ class deltaDriver:
 
     def findSerialPort(self):
         #finds available serial
-        comm = ''
         for port, desc, _ in sorted(comports()):
             if 'serial' in desc.lower():
-                comm = port
-        return comm
+                return port
+        raise EnvironmentError('Can\'t find any serial port.')
+        
 
     def address(self, device, no):
         # takes input as 1 char as device, device number as integer
@@ -256,7 +256,3 @@ class deltaDriver:
         #resets coil at input address
         self.package_address = address
         return self.setCoil(self.package_address, data = 0)
-
-delta = deltaDriver()
-delta.setCoil(delta.address('M', 100))
-delta.resetCoil(delta.address('M', 100))
