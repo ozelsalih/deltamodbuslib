@@ -31,6 +31,17 @@ class deltaDriver:
         self.ser.stopbits   = self.stopbits
         self.ser.timeout    = self.timeout
 
+    def address(device, no):
+        # takes input as 1 char as device, device number as integer
+        if no >= 0:
+            starting_hex = {'S': '0000', 'X': '0400', 'Y': '0500',
+                            'T': '0600', 'M': '0800', 'C': '0E00', 'D': '1000'}
+            if device not in ['S', 'X', 'Y', 'T', 'M', 'C', 'D']:
+                return "Wrong Device Address"
+            else:
+                return format(int(starting_hex[device], 16) + no, '04X')
+        else:
+            return "Wrong Device Number"
 
     def readResponse(self):
         sleep(0.1)
