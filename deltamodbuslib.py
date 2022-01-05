@@ -31,7 +31,7 @@ class deltaDriver:
         self.ser.stopbits   = self.stopbits
         self.ser.timeout    = self.timeout
 
-    def address(device, no):
+    def address(self, device, no):
         # takes input as 1 char as device, device number as integer
         if no >= 0:
             starting_hex = {'S': '0000', 'X': '0400', 'Y': '0500',
@@ -46,7 +46,7 @@ class deltaDriver:
     def readResponse(self):
         sleep(0.1)
         response = self.ser.read(self.ser.in_waiting) 
-        return response.decode('utf-8'),
+        return response.decode('utf-8')
 
 
     def open(self):
@@ -120,7 +120,6 @@ class deltaDriver:
 
             response = self.readResponse()
             self.close()
-
             if len(response) > 0:
                 if response[3:5] == '03':
                     response = int(response[7:11], 16)
@@ -180,7 +179,6 @@ class deltaDriver:
 
             if len(response) > 0:
                 if response[1:3] == '01':
-                    print(response)
                     response = int(response[5:7], 16)
                     response &= 1
                 else:
@@ -248,15 +246,5 @@ class deltaDriver:
         #resets coil at input address
         self.package_address = address
         return self.setCoil(self.package_address, data = 0)
-    
-    # if __name__ == '__main__':
-    #     x       = deltaDriver()
-    #     x.port  = 0
-    #     x.slave  = '01'
-    #     x.baudrate  = 38400
-    #     x.bytesize  = 7
-    #     x.parity  = 'N'
-    #     x.stopbits  = 2
-    #     print(x.readRegister(address='0000'))
 
 delta = deltaDriver()
