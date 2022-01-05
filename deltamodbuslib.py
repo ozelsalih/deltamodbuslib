@@ -1,4 +1,5 @@
 import serial
+from serial.tools.list_ports import comports
 from time import sleep
 
 
@@ -6,7 +7,6 @@ class deltaDriver:
     #set parameters
     ser              = serial.Serial()
     slave            = '01'                 # slave number              -> 2 digits hexadecimal value
-    port             = 'COM9'               # com port                  -> COM1=0, COM2=1, COM3=2 ...
     baudrate         = 9600                 # baudrate                  -> 4800, 9600, 19200, 38400, 57600, 115200
     bytesize         = 7                    # data bit                  -> 7 or 8
     parity           = 'E'                  # parity                    -> O (odd), E (even) or N (None)
@@ -24,12 +24,21 @@ class deltaDriver:
     package_lrc      = ''                   # check sum
 
     def __init__(self):
-        self.ser.port       = self.port
+        self.ser.port       = self.findSerialPort()
         self.ser.boudrate   = self.baudrate
         self.ser.bytesize   = self.bytesize
         self.ser.parity     = self.parity
         self.ser.stopbits   = self.stopbits
         self.ser.timeout    = self.timeout
+
+
+    def findSerialPort(self):
+        #finds available serial
+        comm = ''
+        for port, desc, _ in sorted(comports()):
+            if 'serial' in desc.lower():
+                comm = port
+        return comm
 
     def address(self, device, no):
         # takes input as 1 char as device, device number as integer
@@ -125,7 +134,7 @@ class deltaDriver:
                     response = int(response[7:11], 16)
                 else:
                     self.error = response[:-2]
-                    raise RuntimeError
+                    return self.error
         
         return response
 
@@ -154,7 +163,7 @@ class deltaDriver:
                     response &= 1
                 else:
                     self.error = response[:-2]
-                    raise RuntimeError
+                    return self.error
         
         return response
 
@@ -183,12 +192,13 @@ class deltaDriver:
                     response &= 1
                 else:
                     self.error = response[:-2]
-                    raise RuntimeError
+                    return self.error
         
         return response
 
 
     def setRegister(self, address, data):
+        #only word, T, D, C
         #write data to register 
         #takes input as 4 digit hexadecimal address and data as decimal integer
         self.package_address = address
@@ -248,3 +258,5 @@ class deltaDriver:
         return self.setCoil(self.package_address, data = 0)
 
 delta = deltaDriver()
+delta.setCoil(delta.address('M', 100))
+delta.resetCoil(delta.address('M', 100))
