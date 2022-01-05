@@ -1,11 +1,20 @@
 from deltamodbuslib import deltaDriver
-from deltamodbuslib import deltaDriver
+from time import perf_counter
 
 delta = deltaDriver()
 m100 = delta.address('M', 100)
-y3 = delta.address('Y', 3)
 
+print("\n------------------------")
+tic = perf_counter()
 delta.setCoil(m100)
-delta.setCoil(y3)
+toc = perf_counter()
+print("setCoil:", format(toc - tic, '0.4f'))
+print("------------------------")
+
+print("\n------------------------")
+tic = perf_counter()
 delta.resetCoil(m100)
-delta.resetCoil(y3)
+toc = perf_counter()
+print("resetCoil:", format(toc - tic, '0.4f'))
+print("------------------------")
+

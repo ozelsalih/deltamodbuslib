@@ -52,8 +52,10 @@ class deltaDriver:
         else:
             return "Wrong Device Number"
 
+
     def readResponse(self):
-        sleep(0.1)
+        while self.ser.in_waiting < 3:
+            sleep(0.05)
         response = self.ser.read(self.ser.in_waiting) 
         return response.decode('utf-8')
 
