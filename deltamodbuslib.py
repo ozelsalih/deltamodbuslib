@@ -1,32 +1,29 @@
 import serial
 from time import sleep
 
+
 class deltaDriver:
     #set parameters
     ser              = serial.Serial()
-    slave            = '01'          # slave number              -> 2 digits hexadecimal value
-    port             = 'COM9'        # com port                  -> COM1=0, COM2=1, COM3=2 ...
-    baudrate         = 9600          # baudrate                  -> 4800, 9600, 19200, 38400, 57600, 115200
-    bytesize         = 7             # data bit                  -> 7 or 8
-    parity           = 'N'           # parity                    -> O (odd), E (even) or N (None)
-    stopbits         = 2             # stop bit                  -> 1 or 2
-    timeout          = 2             # timeout                   -> 0 for no timeout, (seconds)
-    error            = ''            # last error message
+    slave            = '01'                 # slave number              -> 2 digits hexadecimal value
+    port             = 'COM9'               # com port                  -> COM1=0, COM2=1, COM3=2 ...
+    baudrate         = 9600                 # baudrate                  -> 4800, 9600, 19200, 38400, 57600, 115200
+    bytesize         = 7                    # data bit                  -> 7 or 8
+    parity           = 'E'                  # parity                    -> O (odd), E (even) or N (None)
+    stopbits         = serial.STOPBITS_ONE  # stop bit                  -> 1 or 2
+    timeout          = 1                    # timeout                   -> 0 for no timeout, (seconds)
+    error            = ''                   # last error message
     package          = ''
-    package_stx      = ':'           # package starting char
-    package_address  = ''            # 4 digit hexadecimal number that reffers address
-    package_command  = ''            # 01=read coil status, 02=I/O read input status, 03=read holding register, 05=coil set/reset, 06=preset single register ...
-    package_data     = 0             # parameter value (decimal)
-    package_data_hex = ''            # parameter value (4 digit hexadecimal string)
-    package_end      = '\r\n'        # package ending char
-    package_lrc      = ''            # check sum
+    package_utf      = ''
+    package_stx      = ':'                  # package starting char
+    package_address  = ''                   # 4 digit hexadecimal number that reffers address
+    package_command  = ''                   # 01=read coil status, 02=I/O read input status, 03=read holding register, 05=coil set/reset, 06=preset single register ...
+    package_data     = 0                    # parameter value (decimal)
+    package_data_hex = ''                   # parameter value (4 digit hexadecimal string)
+    package_end      = '\r\n'               # package ending char
+    package_lrc      = ''                   # check sum
 
     def __init__(self):
-    #initial funtion
-        pass
-
-    def open(self):
-    #sets parameters and return True if port is open
         self.ser.port       = self.port
         self.ser.boudrate   = self.baudrate
         self.ser.bytesize   = self.bytesize
@@ -34,12 +31,20 @@ class deltaDriver:
         self.ser.stopbits   = self.stopbits
         self.ser.timeout    = self.timeout
 
+
+    def readResponse(self):
+        sleep(0.1)
+        response = self.ser.read(self.ser.in_waiting) 
+        return response.decode('utf-8'),
+
+
+    def open(self):
         try:
             self.ser.open()
         except:
             pass
-
         return self.ser.isOpen()
+
 
     def close(self):
         #closes serial port, return serial status
@@ -49,7 +54,8 @@ class deltaDriver:
             except:
                 pass
         return self.ser.isOpen()
-    
+
+
     def calcLRC(self):
         #LRC calculation, return 2 digits hexadecimal value
         self.package_lrc = ''
@@ -67,10 +73,12 @@ class deltaDriver:
             lrc = 256 - lrc
             
             #2 digit hexadecimal conversion for return
-            self.package_lrc = format(lrc, '02x')
+            self.package_lrc = format(lrc, '02X')
+
 
         return self.package_lrc
     
+
     def createPackage(self):
         #Creates the data package to be sent to the serial
         package =  self.package_stx
@@ -80,8 +88,10 @@ class deltaDriver:
         package += self.calcLRC()
         package += self.package_end
 
-        self.package = package
+        self.package_utf = package
+        self.package = package.encode('utf-8')
     
+
     def readRegister(self, address):
         #reads register from PLC 
         #takes input as 4 digit hexadecimal address
@@ -97,7 +107,7 @@ class deltaDriver:
             self.createPackage()
             self.ser.write(self.package)
 
-            response = self.ser.readline()
+            response = self.readResponse()
             self.close()
 
             if len(response) > 0:
@@ -108,6 +118,7 @@ class deltaDriver:
                     raise RuntimeError
         
         return response
+
 
     def readCoil(self, address):
         #reads coil from PLC 
@@ -124,7 +135,7 @@ class deltaDriver:
             self.createPackage()
             self.ser.write(self.package)
 
-            response = self.ser.readline()
+            response = self.readResponse()
             self.close()
 
             if len(response) > 0:
@@ -136,6 +147,7 @@ class deltaDriver:
                     raise RuntimeError
         
         return response
+
 
     def readInput(self, address):
         #reads Input from PLC 
@@ -152,12 +164,13 @@ class deltaDriver:
             self.createPackage()
             self.ser.write(self.package)
 
-            response = self.ser.readline()
+            response = self.readResponse()
             self.close()
 
             if len(response) > 0:
-                if response[3:5] == '01':
-                    response = int(response[7:9], 16)
+                if response[1:3] == '01':
+                    print(response)
+                    response = int(response[5:7], 16)
                     response &= 1
                 else:
                     self.error = response[:-2]
@@ -174,13 +187,13 @@ class deltaDriver:
         self.package_command = '06'
         
         self.package_data_hex = self.package_address
-        self.package_data_hex += format(self.package_data, '04x')
+        self.package_data_hex += format(self.package_data, '04X')
 
         if self.open():
             self.createPackage()
             self.ser.write(self.package)
 
-            response = self.ser.readline()
+            response = self.readResponse()
             self.close()
 
             if response == self.package:
@@ -189,6 +202,7 @@ class deltaDriver:
                 self.error = response[:-2]
         
         return False
+
 
     def setCoil(self, address, data=65280):
         #set coil on or off 
@@ -202,21 +216,22 @@ class deltaDriver:
         self.package_command = '05'
 
         self.package_data_hex = self.package_address
-        self.package_data_hex += format(self.package_data, '04x')
+        self.package_data_hex += format(self.package_data, '04X')
 
         if self.open():
             self.createPackage()
             self.ser.write(self.package)
 
-            response = self.ser.readline()
+            response = self.readResponse()
             self.close()
 
-            if response == self.package:
+            if response == self.package_utf:
                 return True
             else:
                 self.error = response[:-2]
-        
+
         return False
+
 
     def resetCoil(self, address):
         #resets coil at input address
@@ -234,7 +249,3 @@ class deltaDriver:
     #     print(x.readRegister(address='0000'))
 
 delta = deltaDriver()
-
-print(delta.setCoil(address='0864', data=65280))
-sleep(1)
-print(delta.setCoil(address='0864', data=0))
