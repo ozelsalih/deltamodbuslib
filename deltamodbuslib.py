@@ -31,14 +31,34 @@ class deltaDriver:
         self.ser.stopbits   = self.stopbits
         self.ser.timeout    = self.timeout
 
+    def listSerialPorts(self):
+        #lists all available serial ports
+        available_ports = []
+
+        for port, desc, _ in sorted(comports()):
+            if 'serial' in desc.lower():
+                available_ports.append(port)
+
+        return available_ports        
 
     def findSerialPort(self):
         #finds available serial
-        for port, desc, _ in sorted(comports()):
-            if 'serial' in desc.lower():
-                return port
-        raise EnvironmentError('Can\'t find any serial port.')
+        available_ports = self.listSerialPorts()
+
+        if len(available_ports) == 0:
+            raise EnvironmentError('Can\'t find any serial port.')
         
+        elif len(available_ports) == 1:
+            return available_ports[0]
+
+        else:
+            print("""Multiple serial ports detected""")
+            for num, i in enumerate(available_ports):
+                print(f"Select {num} for {i}")
+
+            select = int(input("Waiting for input: "))
+
+            return available_ports[select]
 
     def address(self, device, no):
         # takes input as 1 char as device, device number as integer
