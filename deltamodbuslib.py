@@ -22,6 +22,7 @@ class deltaDriver:
     package_data_hex = ''                   # parameter value (4 digit hexadecimal string)
     package_end      = '\r\n'               # package ending char
     package_lrc      = ''                   # check sum
+    response         = ''                   # check sum
 
     def __init__(self):
         self.ser.port       = self.findSerialPort()
@@ -77,7 +78,8 @@ class deltaDriver:
         while self.ser.in_waiting < 3:
             sleep(0.05)
         response = self.ser.read(self.ser.in_waiting) 
-        return response.decode('utf-8')
+        self.response = response.decode('utf-8')
+        return self.response
 
 
     def open(self):
